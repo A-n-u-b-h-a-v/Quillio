@@ -39,3 +39,93 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Quillio Project Specific
+# Database and data files
+/data
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.backup
+*.sql
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+/tmp
+/temp
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Build artifacts
+dist/
+build/
+out/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.next/
+.vercel/
+
+# Environment and secrets
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database connection strings and secrets
+*.env
+.env.*
+
+# MongoDB dumps
+mongodb-dump/
+mongo-backup/
+
+# Test data
+test-data/
+seed-data/
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Lock files (keep package-lock.json but ignore others)
+yarn.lock
+pnpm-lock.yaml
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# ESLint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Next.js specific
+.next/
+out/
+
+# Vercel specific
+.vercel/
+
+# Local development
+.local/
