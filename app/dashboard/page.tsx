@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, LogOut, FileText, Plus, Users, ArrowUpCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 interface User {
   _id: string;
@@ -75,7 +76,7 @@ export default function Dashboard() {
       toast.success('Logged out successfully');
       router.push('/login');
     } catch (err) {
-      console.error('Logout failed');
+      logger.error('Logout failed', err);
       toast.error('Logout failed');
     } finally {
       setIsLoggingOut(false);

@@ -5,7 +5,7 @@ import { SUBSCRIPTION_PLANS } from "@/lib/constants/subscription";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { slug: string } }  // ✅ no Promise here
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   const { user, error } = await withAuth(req, { 
     requireAdmin: true,
@@ -16,7 +16,7 @@ export async function POST(
   if (error) return error;
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { slug } = params;   // ✅ directly access params
+  const { slug } = await params; // ✅ Await params
   const tenant = await Tenant.findOne({ slug });
 
   if (!tenant) {

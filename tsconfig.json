@@ -15,8 +15,7 @@
     "outDir": "dist",
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "jsx": "preserve" // ✅ Add this for React 17+ JSX transform
-    ,
+    "jsx": "preserve",
     "lib": [
       "dom",
       "dom.iterable",
@@ -37,7 +36,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ], // ✅ Include TSX files
+  ],
   "exclude": [
     "node_modules",
     "dist"

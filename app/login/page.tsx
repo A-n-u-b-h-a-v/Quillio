@@ -142,7 +142,7 @@ export default function LoginPage() {
               </div>
               <div className="pt-4 text-center">
                 <p className="text-sm text-slate-600">
-                  Don't have an organization?{' '}
+                  Don&apos;t have an organization?{' '}
                   <a href="/signup" className="text-blue-600 hover:text-blue-800 font-medium">
                     Create one here
                   </a>

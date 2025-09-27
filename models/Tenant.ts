@@ -13,7 +13,7 @@ const TenantSchema = new mongoose.Schema<TenantDocument>({
   notesCount: { type: Number, default: 0 }
 }, { timestamps: true });
 
-TenantSchema.index({ slug: 1 }, { unique: true });
+
 
 // Explicitly set collection name to 'tenants'
 export default mongoose.models.Tenant as mongoose.Model<TenantDocument> 

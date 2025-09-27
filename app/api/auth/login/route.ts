@@ -1,75 +1,69 @@
-import { NextRequest, NextResponse } from "next/server"
-import { connectMongoDB } from "@/lib/db"
-import { User, Tenant } from "@/models"
-import bcrypt from 'bcryptjs'
-import { generateToken } from '@/lib/auth'
-import { signinInput } from "@/schemas/zodTypes"
+import { NextRequest, NextResponse } from "next/server";
+import User from "@/models/User";
+import Tenant from "@/models/Tenant";
+import { signinInput } from "@/schemas/zodTypes";
+import { connectMongoDB } from "@/lib/db";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 export async function POST(req: NextRequest) {
-    await connectMongoDB()
-
-    const json = await req.json()
-
-    const parsed = signinInput.safeParse(json)
-    if (!parsed.success) {
-        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 })
+    try {
+        await connectMongoDB();
+        
+        const json = await req.json();
+        const validation = signinInput.safeParse(json);
+        
+        if (!validation.success) {
+            return NextResponse.json(
+                { error: "Invalid input", details: validation.error.flatten() },
+                { status: 400 }
+            );
+        }
+        
+        const { email, password } = validation.data;
+        
+        const user = await User.findOne({ email }).populate('tenantId');
+        
+        if (!user) {
+            return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+        }
+        
+        // Use passwordHash field from the model
+        const valid = await bcrypt.compare(password, user.passwordHash as string);
+        
+        if (!valid) {
+            return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
+        }
+        
+        if (user._id) {
+            const token = jwt.sign(
+                { 
+                    userId: user._id, 
+                    tenantId: user.tenantId,
+                    role: user.role 
+                },
+                process.env.JWT_SECRET as string,
+                { expiresIn: '7d' }
+            );
+            
+            return NextResponse.json({
+                message: "Login successful",
+                token,
+                user: {
+                    id: user._id,
+                    firstName: user.firstName,
+                    lastName: user.lastName,
+                    email: user.email,
+                    role: user.role,
+                    tenantId: user.tenantId,
+                }
+            });
+        }
+        
+        return NextResponse.json({ error: "Login failed" }, { status: 500 });
+        
+    } catch (error) {
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-    const { email, password } = parsed.data
-    
-    console.log('Looking for user with email:', email);
-    const user = await User.findOne({ email }).populate('tenantId');
-    console.log('Found user:', user ? 'Yes' : 'No');
-    if (user) {
-        console.log('User details:', {
-            id: user._id,
-            email: user.email,
-            firstName: user.firstName,
-            role: user.role,
-            tenantId: user.tenantId,
-            hasPasswordHash: !!user.passwordHash
-        });
-    }
-    if (!user) {
-        return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-    }
-    
-    // Use passwordHash field from the model
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    console.log('Password valid:', valid);
-    
-    if (!valid) {
-        return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
-    }
-    
-    if (user._id) {
-        const token = generateToken({
-            userId: user._id.toString(),
-            firstName: user.firstName,
-            role: user.role,
-            tenantId: user.tenantId.toString()
-        })
-
-        const response = NextResponse.json({
-            message: "Logged In",
-            user: {
-                _id: user._id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                email: user.email,
-                role: user.role,
-                tenantId: user.tenantId
-            }
-        }, { status: 200 })
-    
-        response.cookies.set("token", token, { 
-            httpOnly: true, 
-            path: '/', 
-            secure: process.env.NODE_ENV === 'production', 
-            sameSite: 'lax' 
-        })
-        return response
-    }
-    
-    return NextResponse.json({ error: 'Login failed' }, { status: 500 })
 }
 

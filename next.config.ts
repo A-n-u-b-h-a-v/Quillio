@@ -13,6 +13,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Optimize for production
+  // Enable experimental features for better performance
+  experimental: { optimizeCss: false },
+
+  // Optimize images
+  images: {
+    unoptimized: true, // For Vercel deployment
+  },
 };
 
 export default nextConfig;

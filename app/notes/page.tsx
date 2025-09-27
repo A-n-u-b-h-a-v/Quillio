@@ -22,6 +22,7 @@ import {
   AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { logger } from '@/lib/logger';
 
 interface Note {
   _id: string;
@@ -116,7 +117,7 @@ export default function NotesPage() {
         setTeamMembers(Array.isArray(usersData) ? usersData : []);
       }
     } catch (err) {
-      console.error('Error fetching data:', err);
+      logger.error('Error fetching data:', err);
       setError('Network error');
     } finally {
       setIsLoading(false);
@@ -125,7 +126,7 @@ export default function NotesPage() {
 
   useEffect(() => {
     fetchAllData();
-  }, [router]);
+  }, []); // Remove fetchAllData from dependencies to avoid infinite loop
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
@@ -134,7 +135,7 @@ export default function NotesPage() {
       toast.success('Logged out successfully');
       router.push('/');
     } catch {
-      console.error('Logout failed');
+      logger.error('Logout failed');
       toast.error('Logout failed');
     } finally {
       setIsLoggingOut(false);
@@ -373,7 +374,7 @@ export default function NotesPage() {
             <Alert className="mb-6 border-yellow-200 bg-yellow-50">
               <Crown className="h-4 w-4" />
               <AlertDescription>
-                You've reached the free plan limit of 3 notes.
+                You&apos;ve reached the free plan limit of 3 notes.
                 {user?.role === 'admin' ? ' Upgrade to Pro to create unlimited notes.' : ' Contact your admin to upgrade.'}
               </AlertDescription>
             </Alert>
@@ -679,7 +680,7 @@ export default function NotesPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Note</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete the note "{noteToDelete.title}"? This action cannot be undone.
+                Are you sure you want to delete the note &quot;{noteToDelete.title}&quot;? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

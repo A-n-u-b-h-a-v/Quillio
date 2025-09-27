@@ -17,31 +17,24 @@ export async function GET(
   });
 
   if (error) return error;
-  if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const { id } = await params;
 
   try {
-    const { id } = await params;
-    const note = await Notes.findById(id)
-      .populate("createdBy", "firstName lastName email")
-      .populate("createdFor", "firstName lastName email")
-      .lean();
+    await connectMongoDB();
+
+    const note = await Notes.findOne({
+      _id: id,
+      tenantId: user.tenantId,
+    }).populate("assignedTo", "firstName lastName email");
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
     }
 
-    // Ensure the note belongs to the same tenant
-    if (note.tenant.toString() !== user.tenantId.toString()) {
-      return NextResponse.json(
-        { error: "Cannot access note from another tenant" },
-        { status: 403 }
-      );
-    }
-
     return NextResponse.json(note);
   } catch (error) {
-    console.error("Error fetching note:", error);
     return NextResponse.json(
       { error: "Failed to fetch note" },
       { status: 500 }
@@ -60,63 +53,70 @@ export async function PUT(
   });
 
   if (error) return error;
-  if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const json = await req.json();
-  const updateSchema = notesInput.partial();
-  const parsed = updateSchema.safeParse(json);
-
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.flatten() },
-      { status: 400 }
-    );
-  }
-
-  // Find the note
   const { id } = await params;
-const note = await Notes.findById(id)
-  if (!note) {
-    return NextResponse.json({ error: "Note not found" }, { status: 404 });
-  }
 
-  // Ensure the note belongs to the same tenant
-  if (note.tenant.toString() !== user.tenantId.toString()) {
-    return NextResponse.json(
-      { error: "Cannot update note from another tenant" },
-      { status: 403 }
-    );
-  }
+  try {
+    await connectMongoDB();
 
-  // Validate assigned user if provided
-  let assignedUser: any = null;
-  if (parsed.data.assignedTo) {
-    assignedUser = await User.findOne({
-      _id: parsed.data.assignedTo,
-      tenantId: user.tenantId,
-    })
-      .select("_id firstName role tenantId")
-      .lean();
+    const json = await req.json();
+    const validation = notesInput.safeParse(json);
 
-    if (!assignedUser) {
+    if (!validation.success) {
       return NextResponse.json(
-        { error: "Assigned user not found in tenant" },
+        { error: "Invalid input", details: validation.error.flatten() },
         { status: 400 }
       );
     }
+
+    const { title, content, priority, assignedTo } = validation.data;
+
+    const note = await Notes.findOne({
+      _id: id,
+      tenantId: user.tenantId,
+    });
+
+    if (!note) {
+      return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    // If assignedTo is provided, validate it exists in the tenant
+    if (assignedTo) {
+      const assignedUser = await User.findOne({
+        _id: assignedTo,
+        tenantId: user.tenantId,
+      });
+
+      if (!assignedUser) {
+        return NextResponse.json(
+          { error: "Assigned user not found in tenant" },
+          { status: 400 }
+        );
+      }
+    }
+
+    note.title = title;
+    note.content = content;
+    note.priority = priority;
+    if (assignedTo) {
+      (note as any).assignedTo = assignedTo;
+    } else {
+      (note as any).assignedTo = null;
+    }
+
+    await note.save();
+
+    return NextResponse.json({
+      message: "Note updated successfully",
+      note,
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to update note" },
+      { status: 500 }
+    );
   }
-
-  // Update the note
-  if (parsed.data.title !== undefined) note.title = parsed.data.title;
-  if (parsed.data.content !== undefined) note.content = parsed.data.content;
-  if (parsed.data.priority !== undefined) note.priority = parsed.data.priority;
-  if (parsed.data.assignedTo !== undefined)
-    note.createdFor = assignedUser?._id || null;
-
-  await note.save();
-
-  return NextResponse.json(note, { status: 200 });
 }
 
 // DELETE /notes/:id - Delete a note
@@ -130,34 +130,34 @@ export async function DELETE(
   });
 
   if (error) return error;
-  if (!user)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { id } = await params;
-const note = await Notes.findById(id)
-  if (!note) {
-    return NextResponse.json({ error: "Note not found" }, { status: 404 });
-  }
 
-  // Ensure the note belongs to the same tenant
-  if (note.tenant.toString() !== user.tenantId.toString()) {
+  try {
+    await connectMongoDB();
+
+    const note = await Notes.findOne({
+      _id: id,
+      tenantId: user.tenantId,
+    });
+
+    if (!note) {
+      return NextResponse.json({ error: "Note not found" }, { status: 404 });
+    }
+
+    await Notes.findByIdAndDelete(id);
+
+    // Decrement notesCount in tenant
+    await Tenant.findByIdAndUpdate(user.tenantId, {
+      $inc: { notesCount: -1 },
+    });
+
+    return NextResponse.json({ message: "Note deleted successfully" });
+  } catch (error) {
     return NextResponse.json(
-      { error: "Cannot delete note from another tenant" },
-      { status: 403 }
+      { error: "Failed to delete note" },
+      { status: 500 }
     );
   }
-
-  await note.deleteOne();
-
-  // Decrement tenant's notesCount atomically
-  await Tenant.findByIdAndUpdate(
-    user.tenantId,
-    { $inc: { notesCount: -1 } },
-    { new: true }
-  );
-
-  return NextResponse.json(
-    { message: "Note deleted successfully" },
-    { status: 200 }
-  );
 }
