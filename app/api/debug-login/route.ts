@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import User from "@/models/User";
+import Tenant from "@/models/Tenant"; // Add this import
 import { connectMongoDB } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
