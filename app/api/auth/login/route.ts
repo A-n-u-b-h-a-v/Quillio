@@ -27,6 +27,8 @@ export async function POST(req: NextRequest) {
         console.log("✅ Database connected");
         
         const json = await req.json();
+        console.log("📝 Request body:", json);
+        
         const validation = signinInput.safeParse(json);
         
         if (!validation.success) {
@@ -41,6 +43,7 @@ export async function POST(req: NextRequest) {
         console.log("🔍 Looking for user:", email);
         
         const user = await User.findOne({ email }).populate('tenantId');
+        console.log("👤 User found:", user ? "Yes" : "No");
         
         if (!user) {
             console.log("❌ User not found:", email);
@@ -48,9 +51,11 @@ export async function POST(req: NextRequest) {
         }
         
         console.log("✅ User found, checking password");
+        console.log("🔑 User passwordHash exists:", !!user.passwordHash);
         
         // Use passwordHash field from the model
         const valid = await bcrypt.compare(password, user.passwordHash as string);
+        console.log("🔐 Password valid:", valid);
         
         if (!valid) {
             console.log("❌ Invalid password for user:", email);
@@ -90,13 +95,14 @@ export async function POST(req: NextRequest) {
         
     } catch (error) {
         console.error("❌ Login error:", error);
+        console.error("❌ Error stack:", error instanceof Error ? error.stack : 'No stack trace');
         
-        // Properly handle the unknown error type
         const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         
         return NextResponse.json({ 
             error: "Internal server error", 
-            details: process.env.NODE_ENV === 'development' ? errorMessage : undefined 
+            details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+            stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : undefined) : undefined
         }, { status: 500 });
     }
 }
