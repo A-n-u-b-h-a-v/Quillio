@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import User from "@/models/User";
-import Tenant from "@/models/Tenant"; // Add this import
 import { connectMongoDB } from "@/lib/db";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -16,8 +15,8 @@ export async function POST(req: NextRequest) {
         console.log("📝 Email:", email);
         console.log("📝 Password length:", password?.length);
         
-        // Find user
-        const user = await User.findOne({ email }).populate('tenantId');
+        // Find user WITHOUT populate to avoid schema issues
+        const user = await User.findOne({ email });
         console.log("👤 User found:", !!user);
         
         if (!user) {
@@ -29,7 +28,8 @@ export async function POST(req: NextRequest) {
             email: user.email,
             firstName: user.firstName,
             hasPasswordHash: !!user.passwordHash,
-            passwordHashLength: user.passwordHash?.length
+            passwordHashLength: user.passwordHash?.length,
+            tenantId: user.tenantId
         });
         
         // Test password comparison
@@ -43,12 +43,16 @@ export async function POST(req: NextRequest) {
         
         // Test JWT generation
         console.log("🎫 Testing JWT generation...");
+        const payload = { 
+            userId: user._id.toString(), 
+            tenantId: user.tenantId.toString(),
+            role: user.role 
+        };
+        
+        console.log("🎫 JWT payload:", payload);
+        
         const token = jwt.sign(
-            { 
-                userId: user._id, 
-                tenantId: user.tenantId,
-                role: user.role 
-            },
+            payload,
             process.env.JWT_SECRET as string,
             { expiresIn: '7d' }
         );
