@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
         // Test JWT generation
         console.log("🎫 Testing JWT generation...");
         const payload = { 
-            userId: user._id.toString(), 
-            tenantId: user.tenantId.toString(),
+            userId: String(user._id), 
+            tenantId: String(user.tenantId),
             role: user.role 
         };
         
