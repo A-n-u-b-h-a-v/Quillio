@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema<UserDocument>({
   email: { type: String, required: true },
   passwordHash: { type: String, required: true },
   role: { type: String, enum: Object.values(USER_ROLES), default: USER_ROLES.MEMBER, required: true },
-  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'tenants', required: true }
+  tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', required: true } // Changed from 'tenants' to 'Tenant'
 }, { timestamps: true });
 
 UserSchema.index({ tenantId: 1 });

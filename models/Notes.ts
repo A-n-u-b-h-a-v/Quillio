@@ -7,9 +7,9 @@ const NoteSchema = new mongoose.Schema<NoteDocument>({
   title: { type: String, required: true },
   content: { type: String, required: true },
   priority: { type: String, enum: Object.values(NOTE_PRIORITIES), default: NOTE_PRIORITIES.MEDIUM },
-  tenant: { type: mongoose.Schema.Types.ObjectId, ref: "tenants", required: true },
-  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "users", required: true },
-  createdFor: { type: mongoose.Schema.Types.ObjectId, ref: "users", default: null },
+  tenant: { type: mongoose.Schema.Types.ObjectId, ref: "Tenant", required: true }, // Changed from "tenants" to "Tenant"
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // Changed from "users" to "User"
+  createdFor: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null }, // Changed from "users" to "User"
 }, { timestamps: true });
 
 NoteSchema.index({ tenant: 1 });
