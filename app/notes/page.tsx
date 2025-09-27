@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { logger } from '@/lib/logger';
+import { getAuthHeaders, clearToken } from '@/lib/auth-utils';
 
 interface Note {
   _id: string;
@@ -84,10 +85,10 @@ export default function NotesPage() {
     setIsLoading(true);
     try {
       const [userRes, tenantRes, notesRes, usersRes] = await Promise.all([
-        fetch('/api/me'),
-        fetch('/api/tenant'),
-        fetch('/api/notes'),
-        fetch('/api/users')
+        fetch('/api/me', { headers: getAuthHeaders() }),
+        fetch('/api/tenant', { headers: getAuthHeaders() }),
+        fetch('/api/notes', { headers: getAuthHeaders() }),
+        fetch('/api/users', { headers: getAuthHeaders() })
       ]);
 
       if (userRes.ok) {
@@ -132,6 +133,7 @@ export default function NotesPage() {
     setIsLoggingOut(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      clearToken(); // Clear the JWT token from cookies
       toast.success('Logged out successfully');
       router.push('/');
     } catch {
@@ -154,7 +156,7 @@ export default function NotesPage() {
 
       const response = await fetch('/api/notes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(apiData),
       });
 
@@ -203,7 +205,7 @@ export default function NotesPage() {
     try {
       const response = await fetch(`/api/notes/${editingNote._id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(formData),
       });
 
@@ -244,7 +246,7 @@ export default function NotesPage() {
     if (!tenant) return;
     setIsUpgrading(true);
     try {
-      const response = await fetch(`/api/tenant/${tenant.slug}/upgrade`, { method: 'POST' });
+      const response = await fetch(`/api/tenant/${tenant.slug}/upgrade`, { method: 'POST', headers: getAuthHeaders() });
       if (response.ok) {
         await fetchAllData();
         setShowUpgradeModal(false);
@@ -690,7 +692,10 @@ export default function NotesPage() {
                   if (!noteToDelete) return;
                   setIsDeleting(true);
                   try {
-                    const response = await fetch(`/api/notes/${noteToDelete._id}`, { method: 'DELETE' });
+                    const response = await fetch(`/api/notes/${noteToDelete._id}`, { 
+                      method: 'DELETE',
+                      headers: getAuthHeaders()
+                    });
                     if (response.ok) {
                       await fetchAllData();
                       setNoteToDelete(null);

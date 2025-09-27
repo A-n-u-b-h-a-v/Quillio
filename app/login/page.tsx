@@ -30,6 +30,8 @@ export default function LoginPage() {
 
       const data = await response.json();
       if (response.ok) {
+        // Store JWT token in cookie
+        document.cookie = `token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}; secure; samesite=strict`;
         router.push('/dashboard');
       } else {
         setError(data.error || 'Login failed');

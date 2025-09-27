@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, LogOut, FileText, Plus, Users, ArrowUpCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { logger } from '@/lib/logger';
+import { getToken, getAuthHeaders, clearToken } from '@/lib/auth-utils';
 
 interface User {
   _id: string;
@@ -43,8 +44,8 @@ export default function Dashboard() {
     const fetchData = async () => {
       try {
         const [userRes, tenantRes] = await Promise.all([
-          fetch('/api/me'),
-          fetch('/api/tenant')
+          fetch('/api/me', { headers: getAuthHeaders() }),
+          fetch('/api/tenant', { headers: getAuthHeaders() })
         ]);
 
         if (userRes.ok) {
@@ -73,6 +74,7 @@ export default function Dashboard() {
     setIsLoggingOut(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      clearToken(); // Clear the JWT token from cookies
       toast.success('Logged out successfully');
       router.push('/login');
     } catch (err) {
@@ -91,6 +93,7 @@ export default function Dashboard() {
     try {
       const res = await fetch(`/api/tenant/${tenant.slug}/upgrade`, {
         method: 'POST',
+        headers: getAuthHeaders(),
       });
       const data = await res.json();
 

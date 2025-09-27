@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, LogOut, UserPlus, Users, ArrowLeft, Trash2, Edit, X } from 'lucide-react';
-import { Select, SelectItem, SelectContent, SelectValue, SelectTrigger } from '@radix-ui/react-select';
+import { Select, SelectItem, SelectContent, SelectValue, SelectTrigger } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { getAuthHeaders, clearToken } from '@/lib/auth-utils';
 
 interface User {
   _id: string;
@@ -79,9 +80,9 @@ export default function AdminUsersPage() {
     setIsLoading(true);
     try {
       const [userRes, tenantRes, usersRes] = await Promise.all([
-        fetch('/api/me'),
-        fetch('/api/tenant'),
-        fetch('/api/users')
+        fetch('/api/me', { headers: getAuthHeaders() }),
+        fetch('/api/tenant', { headers: getAuthHeaders() }),
+        fetch('/api/users', { headers: getAuthHeaders() })
       ]);
 
       if (userRes.ok) {
@@ -127,7 +128,7 @@ export default function AdminUsersPage() {
     try {
       const response = await fetch('/api/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(inviteForm),
       });
 
@@ -157,6 +158,7 @@ export default function AdminUsersPage() {
     try {
       const response = await fetch(`/api/users/${userId}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       });
 
       if (response.ok) {
@@ -179,6 +181,7 @@ export default function AdminUsersPage() {
     setIsLoggingOut(true);
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
+      clearToken(); // Clear the JWT token from cookies
       toast.success('Logged out successfully');
       router.push('/login');
     } catch (err) {
