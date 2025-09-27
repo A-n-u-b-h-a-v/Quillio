@@ -26,8 +26,9 @@ export async function GET(
 
     const note = await Notes.findOne({
       _id: id,
-      tenantId: user.tenantId,
-    }).populate("assignedTo", "firstName lastName email");
+      tenant: user.tenantId, // Changed from tenantId to tenant
+    }).populate("createdBy", "firstName lastName email")
+      .populate("createdFor", "firstName lastName email");
 
     if (!note) {
       return NextResponse.json({ error: "Note not found" }, { status: 404 });
@@ -74,7 +75,7 @@ export async function PUT(
 
     const note = await Notes.findOne({
       _id: id,
-      tenantId: user.tenantId,
+      tenant: user.tenantId, // Changed from tenantId to tenant
     });
 
     if (!note) {
@@ -100,9 +101,9 @@ export async function PUT(
     note.content = content;
     note.priority = priority;
     if (assignedTo) {
-      (note as any).assignedTo = assignedTo;
+      (note as any).createdFor = assignedTo;
     } else {
-      (note as any).assignedTo = null;
+      (note as any).createdFor = null;
     }
 
     await note.save();
@@ -139,7 +140,7 @@ export async function DELETE(
 
     const note = await Notes.findOne({
       _id: id,
-      tenantId: user.tenantId,
+      tenant: user.tenantId, // Changed from tenantId to tenant
     });
 
     if (!note) {
