@@ -134,8 +134,4 @@ out/
 
 .vercel
 
-app/api/debug-login
-app/api/test-login
-app/api/simple-login
-app/api/seed
-app/api/test
+
