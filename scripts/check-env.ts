@@ -1,8 +1,10 @@
 // scripts/check-env.ts
 import dotenv from "dotenv";
 
-// Load environment variables
-dotenv.config({ path: ".env.local" });
+// Load environment variables (works in both local and production)
+if (process.env.NODE_ENV !== 'production') {
+  dotenv.config({ path: ".env.local" });
+}
 
 const requiredEnvVars = [
   'MONGODB_URI',
@@ -10,7 +12,6 @@ const requiredEnvVars = [
 ];
 
 const optionalEnvVars = [
-  'NEXTAUTH_URL',
   'NODE_ENV'
 ];
 
